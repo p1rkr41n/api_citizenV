@@ -1,5 +1,4 @@
-const { declare } = require('../controllers/statisticalInfo')
-const { createUserController, getUserByIdController, changePasswordController, changeYourPasswordController, getUsersController, changeDeclarePermissionById } = require('../controllers/user')
+const { createUserController, getUserByIdController, changePasswordController, getUsersController, changeDeclarePermissionById, getUserController } = require('../controllers/user')
 const auth = require('../middleware/auth')
 const checkDeclarablePermission = require('../middleware/checkDeclarablePermission')
 const checkRoleToAddUser = require('../middleware/checkRoleToAddUser')
@@ -12,8 +11,10 @@ router.get('/:id',[auth],getUserByIdController)
 //{name(ten cua can bo),username,password,scopeName(ten cua khu vuc do can bo quan ly,admin thi khong can)}==>sever
 router.post('/',[auth,checkRoleToAddUser,checkDeclarablePermission],createUserController)
 //change password of user by id(type:ObjectId)
-router.put('/:id/change-pwd',[auth,checkRoleToAddUser,checkDeclarablePermission],changePasswordController)
+router.put('/:id/change-password',[auth,checkRoleToAddUser,checkDeclarablePermission],changePasswordController)
+router.put('/change-password',[auth],changePasswordController)
 
 router.put('/:id/change-declare-permission',[auth,checkDeclarablePermission],changeDeclarePermissionById)
+router.get('/',[auth],getUserController)
 // router.delete('/:id',[auth,checkRoleToAddUser,checkDeclarablePermission],removeUserController)
 module.exports = router

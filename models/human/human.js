@@ -8,10 +8,10 @@ const humanSchema = new Schema({
         required:true
     },
     // ma ho gia dinh cua noi thuong tru
-    familyIdRef:{
+    idFamilyRef:{
         type:String,
-        ref:'Family',
         required:true,
+        ref:'Family'
     },
     cardId:{
         type:String,
@@ -27,15 +27,15 @@ const humanSchema = new Schema({
     religion:{
         type:String,
     },
-    temporaryResidenceAddressIdRef: {
+    idTemporaryResidenceAddressRef: {
         type :mongoose.Schema.Types.ObjectId,
         ref:"Address",
-        // required:true,
+        required:true,
     },
-    permanentAddressIdRef :{
+    idPermanentAddressRef :{
         type :mongoose.Schema.Types.ObjectId,
         ref:'Address',
-        // required:true,
+        required:true,
     },
     gender: {
         type :String,
@@ -49,7 +49,7 @@ const humanSchema = new Schema({
     educationalLevel :{
         type: String,
         required : true,
-    }
+    },
 })
 
 exports.validate = function(human){
@@ -59,12 +59,11 @@ exports.validate = function(human){
         birth:Joi.date().required(),
         job: Joi.string().required(),
         religion: Joi.string().required(),
-        temporaryResidenceAddress:Joi.ObjectId().required(),
-        permanentAddress:Joi.ObjectId().required(),
+        idTemporaryResidenceAddressRef:Joi.ObjectId().required(),
+        idPermanentAddressRef:Joi.ObjectId().required(),
         gender:Joi.string().required,
         hometown:Joi.String().required(),
         educationalLevel:Joi.string().required(),
-        familyIdRef:Joi.ObjectId().required()
     })
     return schema.validate(human)
 }

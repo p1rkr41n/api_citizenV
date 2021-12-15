@@ -1,4 +1,5 @@
 exports.auth = require('./auth')
 exports.user = require('./user')
-exports.info = require('./statisticalInfo')
 exports.address = require('./address')
+exports.human = require('./human')
+exports.family = require('./family')

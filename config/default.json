@@ -1,3 +1,5 @@
 {
-    "jwtPrivateKey": "unsecureKey"
+    "jwtPrivateKey": "unsecureKey",
+    "db" :"mongodb+srv://admin123456:admin123456@cluster0.qelzb.mongodb.net/citizenV?retryWrites=true&w=majority",
+    "port" :3333
 }

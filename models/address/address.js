@@ -1,33 +1,40 @@
 const Joi = require('joi')
 const mongoose = require('mongoose')
+const { Scope } = require('./scope')
 const Schema = mongoose.Schema
 const addressSchema= new Schema({
-    cityIdRef:{
+    idCountryRef:{
+        type:mongoose.Schema.Types.ObjectId,
+        required :true,
+        ref :'Scope',
+    },
+    idCityRef:{
         type: mongoose.Schema.Types.ObjectId,
         ref :'Scope',
         required:true,
     },
-    districtIdRef:{
+    idDistrictRef:{
         type: mongoose.Schema.Types.ObjectId,
         ref :'Scope',
         required:true,
     },
-    communeIdRef:{
+    idCommuneRef:{
         type: mongoose.Schema.Types.ObjectId,
         ref :'Scope',
         required:true,
     },
-    villageIdRef:{
+    idVillageRef:{
         type: mongoose.Schema.Types.ObjectId,
         ref :'Scope',
+        required :true
     }
 })
 exports.validate = function(address) {
     const schema = Joi.object({
-        cityIdRef:Joi.ObjectId().required(),
-        districtIdRef:Joi.ObjectId().required(),
-        conmmuneIdRef:Joi.ObjectId().required(),
-        villageIdRef:Joi.ObjectId().required(),
+        idCityRef:Joi.ObjectId().required(),
+        idDistrictRef:Joi.ObjectId().required(),
+        idCommuneRef:Joi.ObjectId().required(),
+        idVillageRef:Joi.ObjectId().required(),
 
     })
     return schema.validate(address)

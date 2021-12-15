@@ -10,6 +10,7 @@ module.exports= function(req,res,next) {
         'B1':4,
         'B2':5,
     }
+    if(req.body.role =='admin') return res.status(403).send('Access deniend')
     req.typeOfScope = req.url.split('/')[1]
     const roleID = roleId[req.decodedToken.role]
     console.log(roleId[req.decodedToken.role],roleID == roleId['B1'])
@@ -17,18 +18,24 @@ module.exports= function(req,res,next) {
             case 'country' :
                 if(req.decodedToken.role =='A1')
                     return next();
+                    break;
             case 'city':
                 if(roleID<=roleId['A1']||(roleID ==roleId['A2']&&req.params.id == req.decodedToken._id))
                     return  next();
+                    break;
             case 'district': 
                 if(roleID<=roleId['A2']||(roleID ==roleId['A3']&&req.params.id == req.decodedToken.username))
                     return next();
+                    break;
             case 'commune': 
                 if(roleID<=roleId['A3']||(roleID ==roleId['B1']&&req.params.id == req.decodedToken.username))
                     return next();
+                    break;
             case 'village': 
             //trong de ghi la B2 chi dc nhap lieu
                 if(roleID == roleId['B1'])
                     return next();
+                    break;
         }
+        return res.status(403).send('Access denied')
 }
