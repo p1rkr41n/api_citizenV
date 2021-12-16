@@ -16,8 +16,16 @@ const getUsersController = async function(req,res,next) {
             const accounts =await User.find({idRoleRef :roleRefOfAccount})
             return res.status(200).send(accounts)
         }
-        const accounts =await User.find({addedBy:req.decodedToken._id})
-        if(accounts.length)
+        //find accounts managed by loggedInUser
+        const accounts =(await User.find({addedBy:req.decodedToken._id})
+                                    .populate('idManagedScopeRef')
+                                    .select('name username')).map(account=> {
+                                        return {name:account.name,
+                                                username:account.username,
+                                                managedArea:account.idManagedScopeRef.name
+                                            }
+                                    })
+        if(accounts)
             return res.status(200).send(accounts)
         return res.status(404).send('not found')
         
@@ -30,7 +38,7 @@ const getUserByIdController = async function(req,res,next) {
     if(!loggedInUser) return res.status(400).send('invalid id')
     let user
     if(req.decodedToken.role =='A1') 
-        user = await User.find({idRoleRef:loggedInUser.idRoleRef.idRoleManageRef})
+        user = await User.find({idRoleRef:loggedInUser.idRoleRef.idRoleManageRef,_id:req.params.id})
     else
         user = await User.findOne({
                                 _id:new ObjectId(req.params.id),
@@ -61,6 +69,23 @@ const createUserController = async function(req,res,next) {
     // username:Joi.string().required, id dang nhap cua can bo name
     // password:Joi.string().required(), password cua can bo name
     // tim trong db xem da ton tai id cua newUser chua
+    const parttern1 =/^([0-9]{2}){1,4}$/ 
+    const parttern2 = new RegExp('^'+req.decodedToken.username+"([0-9][1-9]){1}$")
+    if(parttern1.test(req.body.username) &&req.decodedToken.role == 'admin')
+        return res.status(400).send('invalid username')
+
+    //if loggedInUser has role A1 and new username is not in range(01-63)
+    if(req.decodedToken.role=='A1'&&(req.body.username.length !=2 || !parttern1.test(req.body.username)
+        ||Number(req.body.username)==0||(Number(req.body.username)>64)))
+        return res.status(400).send('username must have only 2 character from 01 to 64')
+    
+        //if loggedInUser is not admin or A1
+    if(req.decodedToken.role!='admin' &&req.decodedToken.role!='A1'){
+        if(!parttern2.test(req.body.username))
+            return res.status(400).send('username of new user must include your username and 2 digits(!00)')
+
+    }
+         
     const process =Promise.all([User.findOne({username:req.body.username}),
                     User.findOne({_id:req.decodedToken._id})
                     .populate({path: 'idRoleRef',model:'Role',
@@ -98,6 +123,7 @@ const createUserController = async function(req,res,next) {
         if(err) throw err
         getScope =newScope.save()
     } 
+    
     if(req.decodedToken.role == 'admin')  
         getScope = Scope.findOne({typeOfScope:'country'})
     getScope
@@ -116,7 +142,7 @@ const createUserController = async function(req,res,next) {
         })
         .then(result=> {
             const {name,username,completed,declarable} = result
-            res.status(201).send({name,username,completed,declarable})
+            return res.status(201).send({name,username,completed,declarable})
         })
         .catch(err=> res.status(500).send(err))
     

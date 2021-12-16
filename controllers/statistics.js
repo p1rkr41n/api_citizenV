@@ -37,7 +37,6 @@ const getInfoScopeById = async function(req,res,next) {
         } 
         
     ])
-    console.log(p)
     if((scope.areaCode.startsWith(req.decodedToken.username)&&req.decodedToken.role!='A1')||req.decodedToken.role =='A1'){
         const ref={}
         ref[`id${typeOfScope.charAt(0).toUpperCase()}Ref`] = scope._id

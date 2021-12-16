@@ -9,7 +9,7 @@ const humanSchema = new Schema({
     },
     // ma ho gia dinh cua noi thuong tru
     idFamilyRef:{
-        type:String,
+        type:mongoose.Schema.Types.ObjectId,
         required:true,
         ref:'Family'
     },
@@ -26,6 +26,7 @@ const humanSchema = new Schema({
     },
     religion:{
         type:String,
+        default:null
     },
     idTemporaryResidenceAddressRef: {
         type :mongoose.Schema.Types.ObjectId,
@@ -64,6 +65,7 @@ exports.validate = function(human){
         gender:Joi.string().required,
         hometown:Joi.String().required(),
         educationalLevel:Joi.string().required(),
+        idFamilyRef:Joi.ObjectId().required()
     })
     return schema.validate(human)
 }

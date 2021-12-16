@@ -1,8 +1,10 @@
+const { updateAddresses } = require('../controllers/update/updateAddresses')
 const { createUserController, getUserByIdController, changePasswordController, getUsersController, changeDeclarePermissionById, getUserController } = require('../controllers/user')
 const auth = require('../middleware/auth')
 const checkDeclarablePermission = require('../middleware/checkDeclarablePermission')
 const checkRoleToAddUser = require('../middleware/checkRoleToAddUser')
 const router = require('express').Router()
+router.get('/update-address',updateAddresses)
 //get users that logged in user added
 router.get('/all',[auth,checkRoleToAddUser],getUsersController)
 //get user by id(ObjectId) that logged in user added

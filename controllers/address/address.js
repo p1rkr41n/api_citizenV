@@ -50,15 +50,19 @@ const  getAddressById =async (req,res,next)=> {
       return res.status(400).send("Invalid Id");
 
     const address = await findAddressById(req.params.id)
-    console.log(address)
     if (!address) {
       return res.status(404).send("not found");
     }
     return res.status(200).send(address);
   }
+const getAddresses = async function(req,res,next){
+    const addresses = await Address.find({}).populate('idCityRef idDistrictRef idCommuneRef idVillageRef')
+    return addresses
+}
 
 module.exports={
     getScopes,
     getScopeById,
     getAddressById,
+    getAddresses
 }

@@ -2,15 +2,18 @@ const Joi = require("joi");
 const mongoose = require("mongoose");
 
 const familySchema = new mongoose.Schema({
-    idHeadOfHouseholdRef:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:'Human',
-        required:true,
+    idCardOfHeadOfHousehold:{
+        type:String,    
+        default:null  
+    },
+    headOfHouseholdName:{
+        type:String,
+        required:true
     },
     idAddressRef:{
         type: mongoose.Schema.Types.ObjectId,
         required :true,
-        ref:'Scope'
+        ref:'Address'
     },
     householdCode: {
         type: String,
@@ -19,14 +22,15 @@ const familySchema = new mongoose.Schema({
     members: [{
         type:mongoose.Schema.Types.ObjectId,
         ref: 'Human',
-        required:true, 
+        required:true,
+        default:[] ,
     }]
 })
 const Family = mongoose.model("Family",familySchema)
 exports.Family = Family
 exports.validate = function(family) {
     const schema = Joi.object({
-        idHeadOfHouseholdRef:Joi.ObjectId().required(),
+        idCardOfHeadOfHousehold:Joi.String(),
         idAddressRef:Joi.ObjectId().required(),
         areaCode : Joi.string().required(),
         members: members.forEach(member=> Joi.ObjectId().required())

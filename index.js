@@ -12,7 +12,9 @@ const routes = require('./routes');
 const { User } = require('./models/user/user');
 const { Role } = require('./models/user/role');
 const { Scope } = require('./models/address/scope');
-const   {Address} = require('./models/address/address')
+const   {Address} = require('./models/address/address');
+const { Human } = require('./models/human/human');
+const {Family} = require('./models/human/family');
 require("./startup/cors")(app);
 // create application/json parser
 app.use(express.json());
@@ -25,8 +27,7 @@ app.use("/api/address",routes.address);
 app.use("/api/human",routes.human);
 app.use("/api/family",routes.family);
 require("./startup/db")();
-
-
+// update
 app.listen(port,()=>{
     console.log('app listening at http://localhost:'+port)
 })
