@@ -3,7 +3,7 @@ const { User } = require("../models/user/user")
 const { Human } = require("../models/human/human")
 const { Address } = require("../models/address/address")
 const ObjectId = require('mongoose').Types.ObjectId
-const { isValidObjectId } = require("mongoose")
+const { isValidObjectId, model } = require("mongoose")
 
 exports.createFamily = async function(req,res,next) {
     
@@ -43,12 +43,11 @@ exports.createFamily = async function(req,res,next) {
     if(error) return res.status(400).send(error.details[0].message)  
     //save to db
     return newFamily.save()
-                    .then(result=> res.status(200).send(result))
+                    .then(result=> res.status(200).send({idFamily:result._id,idAddressRef:result.idAddressRef}))
                     .catch(err=> res.status(500).send(err))
 
 }
 exports.editFamily= async (req,res,next)=>{
-    //chua check neu doi dia chi thi nhu nao
     if(!isValidObjectId(req.params.id))
         return res.status(400).send('invalid id family')
     const process = await Promise.all([Family.findOne({_id:req.params.id}).populate('idAddressRef'),
@@ -68,6 +67,8 @@ exports.editFamily= async (req,res,next)=>{
         })
         if(!isAddressManagedByLoggedInUser)
             return res.status(400).send('address of this family is not managed by you')
+        const {err} = Family.validate(req.body.family)
+        if(err) return res.status(400).send('invalid family')
         return Family.findOneAndUpdate({_id:req.params.id},(req.body.family),{new:true})
                     .then(result=> res.status(200).send(result))
                     .catch(err=> console.log(err))
@@ -104,3 +105,76 @@ exports.deleteFamily = async (req,res,next)=>{
                     .catch(err=> res.status(500).send(err))
 }
 
+exports.getFamiliesWithIdArea = async (req,res,next)=>{
+
+    let ref ={typeOfScope : 'country'}
+    if(req.query.idCityRef) {
+        ref.idCityRef= req.query.idCityRef
+        ref.typeOfScope = 'city'
+    }
+    else if(req.query.idDistrictRef) {
+        ref.idDistrictRef= req.query.idDistrictRef
+        ref.typeOfScope = 'district'
+    }
+    else if(req.query.idCommuneRef) {
+        ref.idCommuneRef= req.query.idCommuneRef
+        ref.typeOfScope = 'commune'
+    }
+    else if(req.query.idVillageRef) {
+        ref.idVillageRef= req.query.idVillageRef
+        ref.typeOfScope = 'village'
+    }
+    else if(req.url.split('/')[1] != 'country') 
+        return res.status(404).send('not found')
+
+    if(isValidObjectId(Object.values(ref)[0])) 
+    return res.status(400).send('invalid id')
+    const idAddresses = (await Address.find(ref)
+                                    .select('_id'))
+                                .map(address=>address._id)
+    if(!idAddresses.length) return res.status(400).send('invalid id')
+    return Family.find({idAddressRef:{$in:idAddresses}})
+                .populate({path:'idAddressRef',model:'Address',
+                            populate:{path:'idVillageRef',model:'Scope'}
+                        })                       
+                .select('idAddressRef householdCode headOfHouseholdName')
+                .limit(10)
+                .then(result=>result.length? res.status(200).send(result):res.status(404).send('not found'))
+                .catch(err=> res.status(500).send(err))
+}
+
+
+exports.getInfoFamilyById = async (req,res,next)=>{
+    if(!isValidObjectId(req.params.id))
+        return res.status(400).send('invalid id')
+        const addressFields ='idCountryRef idCityRef idDistrictRef idCommuneRef idVillageRef'
+
+    const process = Promise.all([User.findOne({_id:req.decodedToken._id}),
+                                                Family.findOne({_id:req.params.id})
+                                                .populate({path:'idAddressRef',model:'Address',
+                                                    populate:{path:addressFields,model: 'Scope',select:'name'}}
+                                                    )   
+                                ])
+
+    const [user,family] = await process
+
+    if(!user || !family)return res.send('not found')
+    //neu dia chi tam tru cua human{id} thuoc khu vuc quan ly cua user
+    let isManagedByUser = false
+    const {idCountryRef,idCityRef,idDistrictRef,idCommuneRef,idVillageRef} = family.idAddressRef
+    const ref = [idCountryRef,idCityRef,idDistrictRef,idCommuneRef,idVillageRef]
+    ref.forEach(id=>{if(id.equals(user.idManagedScopeRef)) 
+                        isManagedByUser = true
+                    })
+                    
+    if(!isManagedByUser )   
+        return res.status(404).send("can't find data match with id in your area that you manage")
+    const members = (await Human.find({_id:{$in:family.members}})
+                                .populate({path:'idPermanentAddressRef',model:'Address',
+                                populate:{path:addressFields,model: 'Scope',select:'name'}
+                            })
+                    )
+
+            return res.status(200).send({family,members})           
+
+}

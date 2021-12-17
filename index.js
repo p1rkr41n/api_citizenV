@@ -15,6 +15,11 @@ const { Scope } = require('./models/address/scope');
 const   {Address} = require('./models/address/address');
 const { Human } = require('./models/human/human');
 const {Family} = require('./models/human/family');
+const { removeHumanInfoById } = require('./controllers/human');
+const { required } = require('joi');
+const ObjectId = require('mongoose').Types.ObjectId;
+const { updateAddresses } = require('./controllers/update/updateAddresses');
+
 require("./startup/cors")(app);
 // create application/json parser
 app.use(express.json());
@@ -27,7 +32,23 @@ app.use("/api/address",routes.address);
 app.use("/api/human",routes.human);
 app.use("/api/family",routes.family);
 require("./startup/db")();
-// update
+
+
+
+
+//  newUser = new User({
+//                             name: 'cán bộ quận/huyện của thành phố '+ city.name,
+//                             addedBy: ,
+//                             idManagedScopeRef: city._id,
+//                             idRoleRef:"61b5e3a8bf47d63c05ee12da",
+//                             username:city.areaCode,
+//                             password: '123456',
+//                             completed:false,
+//                             declarable: true
+                        
+//                         })
+
+
 app.listen(port,()=>{
     console.log('app listening at http://localhost:'+port)
 })

@@ -1,29 +1,76 @@
-const { createAddress, getScopeById, getAddressById, getScopes, getAddresses } = require("../controllers/address/address");
-const { getInfoHumans } = require("../controllers/human");
+const {  getAreaById, getAddressById, getFullAddressOfVillageById } = require("../controllers/address/address");
+const { getFamiliesWithIdArea } = require("../controllers/family");
+const {  getInfoHumansWithIdArea } = require("../controllers/human");
 const { getInfoScopeById } = require("../controllers/statistics");
 const auth = require("../middleware/auth");
 const checkRoleToViewScopeInfo = require("../middleware/checkRoleToViewScopeInfo");
+const { Scope } = require("../models/address/scope");
 const router = require("express").Router();
+
+//get all cities
+router.get('/city',[auth],async (req,res,next)=>{
+    const city = await Scope.find({typeOfScope:'city'}).select("_id name");
+    if (!city) return res.status(400).send().send("Error");
+    res.status(200).send(city);
+})
+
+// get list human of area using _id save in req.query (idCityRef,idDistrictRef,idCommuneRef,idVillageRef)
+router.get(['/country/humen',
+            '/city/humen',
+            '/district/humen',
+            '/commune/humen',
+            '/village/humen'],[auth,checkRoleToViewScopeInfo],getInfoHumansWithIdArea)
+// get list family of area using _id save in req.query (idCityRef,idDistrictRef,idCommuneRef,idVillageRef)
+router.get(['/country/family',
+            '/city/family',
+            '/district/family',
+            '/commune/family',
+            '/village/family'],[auth,checkRoleToViewScopeInfo],getFamiliesWithIdArea)
+
+//get all districts belong to city{_id} or communes belong to district{_id} or village belong to{_id}
+//{_id} save in req.query
+router.get(['/district',
+            '/commune',
+            '/village'],[auth],async (req,res,next)=>{
+                const typeOfScope = req.url.split('/')[1].split('?')
+                let belongToScopeRef 
+                if(typeOfScope=='district') belongToScopeRef = req.query.idCityRef
+                else if(typeOfScope=='commune') belongToScopeRef = req.query.idDistrictRef
+                else if(typeOfScope=='village') belongToScopeRef = req.query.idCommuneRef
+                else return res.status(400).send('invalid id')
+                const areas = await Scope.find({typeOfScope:typeOfScope,
+                                                belongToScopeRef:belongToScopeRef}).select("_id name");
+                if (!areas) return res.status(400).send().send("Error");
+                return res.status(200).send(areas);
+            })
+//get area by id
+router.get(['/city/:id',
+            '/district/:id',
+            '/commune/:id',
+            '/village/:id'],[auth],async (req,res,next)=>{
+
+                const typeOfScope = req.url.split('/')[1]
+                const areas = await Scope.find({typeOfScope:typeOfScope,
+                                                _id:req.params.id}).select("_id name");
+                if (!areas) return res.status(400).send().send("Error");
+                res.status(200).send(areas);
+            })
+
+
+//statistic 
+router.get(['/country/statistic','/city/statistic','/district/statistic','/commune/statistic',
+            '/village/statistic'],[auth,checkRoleToViewScopeInfo],getInfoScopeById)
+            
+
+//get area by {_id}
+router.get(['/city/:id','/district/:id','/commune/:id','/village/:id'],[auth],getAreaById)
+
 
 //get address(country, city,district,commune,village)
 router.get('/:id',getAddressById)
 
-//statistic 
-router.get(['/country/statistic','/city/:id/statistic','/district/:id/statistic','/commune/:id/statistic',
-            '/village/:id/statistic'],[auth,checkRoleToViewScopeInfo],getInfoScopeById)
-            
-router.get(['/country/humen','/city/:id/humen','/district/:id/humen','/commune/:id/humen',
-            '/village/:id/humen'],[auth,checkRoleToViewScopeInfo],getInfoHumans)
-
-//areas that belong to {_id}           
-router.get(['/country/scopes','/city/:id/scopes','/district/:id/scopes',
-            '/commune/:id/scopes','/village/:id/scopes'],getScopes)
-
-router.get('/all',getAddresses)
-//areas {_id}
-router.get(['/city/:id','/district/:id','/commune/:id','/village/:id'],getScopeById)
-
-
+//get address(country, city,district,commune,village)
+router.get('/',getFullAddressOfVillageById)
 
 
 module.exports =router;

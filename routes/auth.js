@@ -27,7 +27,11 @@ router.post("/", async (req,res) => {
         role : user.idRoleRef.name,
         declarable: user.declarable,
     })
-    return res.send({token,name:user.name,scope:user.idManagedScopeRef? user.idManagedScopeRef.name:'A1'});
+    return res.send({token,
+                    name:user.name,
+                    area:user.idManagedScopeRef? user.idManagedScopeRef.name:'A1',
+                    idArea: user.idManagedScopeRef._id
+                });
 })
 
 module.exports =router;

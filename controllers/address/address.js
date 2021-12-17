@@ -4,29 +4,9 @@ const mongoose = require('mongoose')
 const { findAddressById, isValidAddress } = require("./utilAddress")
 const ObjectId =mongoose.Types.ObjectId
 
-//get _id,name of areas that managed by area{id} or country
-const getScopes = async function(req,res,next) {
-
-    if(!mongoose.isValidObjectId(req.params.id))
-        return res.status(400).send('invalid id')
-
-    let filter ={}
-    //url: /country/scopes
-    if(!req.url.includes('country')) 
-        filter.belongToIdScopeRef = new ObjectId (req.params.id)
-    //url: /.../:id/scopes
-    else filter.typeOfScope ='city'
-    //find scope by filter
-    return Scope.find(filter).select('_id name' )
-    .then(result=> {
-        if(result.length) return res.status(200).send(result)
-        return res.status(404).send('not found')
-    })
-    .catch(err=>res.send(err))
-}
 
 //get _id name of country(or area{country})
-const getScopeById = async function(req,res,next) {
+const getAreaById = async function(req,res,next) {
     if(!mongoose.isValidObjectId(req.params.id))
         return res.status(400).send('invalid id')
 
@@ -50,19 +30,28 @@ const  getAddressById =async (req,res,next)=> {
       return res.status(400).send("Invalid Id");
 
     const address = await findAddressById(req.params.id)
+                         .populate('idCountryRef idCityRef idDistrictRef idCommuneRef idVillageRef')
     if (!address) {
       return res.status(404).send("not found");
     }
     return res.status(200).send(address);
   }
-const getAddresses = async function(req,res,next){
-    const addresses = await Address.find({}).populate('idCityRef idDistrictRef idCommuneRef idVillageRef')
-    return addresses
-}
+
+ const getFullAddressOfVillageById = async(req,res,next) =>{
+    if (!mongoose.isValidObjectId(req.query.idVillageRef))
+    return res.status(400).send("Invalid Id");
+     return Address.findOne({idVillageRef:req.query.idVillageRef})
+                    .then(result=>{
+                        if(!result) return res.status(404).send('not found')
+                        return res.status(200).send(result)
+                    })
+                    .catch(err=> res.status(500).send(err))
+ }
+
+
 
 module.exports={
-    getScopes,
-    getScopeById,
+    getAreaById,
     getAddressById,
-    getAddresses
+    getFullAddressOfVillageById,
 }

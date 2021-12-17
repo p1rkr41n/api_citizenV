@@ -32,7 +32,7 @@ exports.validate = function(family) {
     const schema = Joi.object({
         idCardOfHeadOfHousehold:Joi.String(),
         idAddressRef:Joi.ObjectId().required(),
-        areaCode : Joi.string().required(),
+        householdCode : Joi.string().required(),
         members: members.forEach(member=> Joi.ObjectId().required())
     })
     return schema.validate(family)

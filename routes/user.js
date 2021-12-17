@@ -10,13 +10,14 @@ router.get('/all',[auth,checkRoleToAddUser],getUsersController)
 //get user by id(ObjectId) that logged in user added
 router.get('/:id',[auth],getUserByIdController)
 //add one user 
-//{name(ten cua can bo),username,password,scopeName(ten cua khu vuc do can bo quan ly,admin thi khong can)}==>sever
 router.post('/',[auth,checkRoleToAddUser,checkDeclarablePermission],createUserController)
 //change password of user by id(type:ObjectId)
-router.put('/:id/change-password',[auth,checkRoleToAddUser,checkDeclarablePermission],changePasswordController)
 router.put('/change-password',[auth],changePasswordController)
-
-router.put('/:id/change-declare-permission',[auth,checkDeclarablePermission],changeDeclarePermissionById)
+//change password of logged in user
+router.put('/change-password',[auth,checkRoleToAddUser,checkDeclarablePermission],changePasswordController)
+//change declare permission
+router.put('/change-declare-permission',[auth,checkDeclarablePermission],changeDeclarePermissionById)
+//get all user that logged in user manage
 router.get('/',[auth],getUserController)
 // router.delete('/:id',[auth,checkRoleToAddUser,checkDeclarablePermission],removeUserController)
 module.exports = router

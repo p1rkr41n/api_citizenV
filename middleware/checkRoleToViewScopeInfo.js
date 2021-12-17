@@ -20,15 +20,15 @@ module.exports= function(req,res,next) {
                     return next();
                     break;
             case 'city':
-                if(roleID<=roleId['A1']||(roleID ==roleId['A2']&&req.params.id == req.decodedToken._id))
+                if(roleID<=roleId['A1']||(roleID ==roleId['A2']))
                     return  next();
                     break;
             case 'district': 
-                if(roleID<=roleId['A2']||(roleID ==roleId['A3']&&req.params.id == req.decodedToken.username))
+                if(roleID<=roleId['A2']||(roleID ==roleId['A3']))
                     return next();
                     break;
             case 'commune': 
-                if(roleID<=roleId['A3']||(roleID ==roleId['B1']&&req.params.id == req.decodedToken.username))
+                if(roleID<=roleId['A3']||(roleID ==roleId['B1']))
                     return next();
                     break;
             case 'village': 

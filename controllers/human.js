@@ -41,10 +41,10 @@ exports.getInfoHumanWithId =  async function(req,res,next) {
 
 
 exports.changeHumanInfoWithId = async function(req,res,next){
-    if(!isValidObjectId(req.params.id)||!isValidObjectId(req.params.idFamily))
+    if(!isValidObjectId(req.params.id)||!isValidObjectId(req.query.idFamily))
         return res.status(400).send('invalid id')
-    const process = Promise.all([User.findOne({_id:req.decodedToken._id}),
-                                                Human.findOne({_id:req.params.id,idFamilyRef:req.params.idFamily})
+    const process = Promise.all([User.findOne({_id:req.decodedToken._id,idFamilyRef:req.query.idFamily}),
+                                                Human.findOne({_id:req.params.id,idFamilyRef:req.query.idFamily})
                                                 .populate('idTemporaryResidenceAddressRef')
                                                 .select('-__v')    
                                 ])
@@ -57,11 +57,15 @@ exports.changeHumanInfoWithId = async function(req,res,next){
     ref.forEach(id=>{if(id.equals(user.idManagedScopeRef)) 
                         isManagedByUser = true
                     })
+    const editedHuman ={idTemporaryResidenceAddressRef:human.idTemporaryResidenceAddressRef._id,
+                        ...(req.body.human),
+                        idFamilyRef:req.query.idFamily
+                    }
     if(isManagedByUser ){
-        const {err}= Human.validate(req.body.human)
+        const {err}= Human.validate(editedHuman)
         if(err) return res.status(400).send(err)
         return Human.findOneAndUpdate({_id:req.params.id},req.body.human,{new: true,select:"name cardId -_id "})
-                    .then(response=>res.status(200).send(response))
+                    .then(response=>res.status(200).send("success"))
                     .catch(err=>res.status(500).send(err))
     }
     return res.status(404).send("can't find data match with id in your areas that you manage")
@@ -69,14 +73,13 @@ exports.changeHumanInfoWithId = async function(req,res,next){
 }
 
 exports.removeHumanInfoById = async (req,res,next) =>{
-    if(!isValidObjectId(req.params.id))
+    if(!isValidObjectId(req.params.id)||!isValidObjectId(req.query.idFamilyRef))
         return res.status(400).send('invalid id')
     const process = Promise.all([User.findOne({_id:req.decodedToken._id}),
-                                                Human.findOne({_id:req.params.id})
+                                                Human.findOne({_id:req.params.id,idFamilyRef:req.query.idFamily})
                                                 .populate('idTemporaryResidenceAddressRef idFamilyRef')
                                                 .select('-__v')    
                                 ])
-                                console.log(await process)
     const [user,human] = await process
     if(!user || !human)
         return res.send('not found')
@@ -86,45 +89,50 @@ exports.removeHumanInfoById = async (req,res,next) =>{
     ref.forEach(id=>{if(id.equals(user.idManagedScopeRef)) 
                         isManagedByUser = true
                     })
-    if(isManagedByUser )   
-    return Promise.all([Human.findOneAndDelete({_id:req.params.id})
+    if(isManagedByUser){
+
+        let editFamily 
+        if(human.idFamilyRef.members.length == 1) 
+            editFamily = Family.findOneAndDelete({_id:req.query.idFamily})
+        else{
+            const index = human.idFamilyRef.members.indexOf(human._id)
+                        if(index!= -1)
+                            human.idFamilyRef.members.splice(index,1)
+            editFamily = Family.findOneAndUpdate({_id:human.idFamilyRef._id},
+                                                {members: human.idFamilyRef.members},
+                                                {new:true})
+        }   
+        return Promise.all([Human.findOneAndDelete({_id:req.params.id})
                 .then(response=>{
                     //remove _id of member from family
                     //if user remove is headOfhousehold                    
                     return res.status(200).send(response)
                 })
                 .catch(err=>res.status(500).send(err)),
-                Family.findOne({_id:human.idFamilyRef})
-                    .then(family=> {
-                        const index = family.members.indexOf(human._id)
-                        console.log(human._id,family.members,human.idFamilyRef)
-                        console.log(index)
-                        if(index!= -1)
-                            family.members.splice(index,1)
-                            console.log({'member':family.members})
-                        return Family.findOneAndUpdate({_id:family._id},{members: family.members},{new:true})
-                    })
+                editFamily
             ])
+        }
     return res.status(404).send("can't find data match with id in your area that you manage")
 }
 
-exports.getInfoHumans = async(req,res,next)=>{
-    const typeOfScope = req.url.split('/')[1]
-    const scope = {typeOfScope}
-    let ref ={typeOfScope}
-    if(typeOfScope != 'country') {
-        
-        if(!isValidObjectId) return res.status(400).send('invalid id')
+exports.getInfoHumen = async(req,res,next)=>{
+    let idVillages =[]
+    let result
+    if(req.decodedToken.role!='A1'&&req.decodedToken.role!='admin') {
         //if(scope{req.param.id} belong to logged in user's managed scope)
-        const result = await Scope.find({_id:req.params.id,areaCode:{$regex:'^'+ req.decodedToken.username}})
-        console.log (result)
-        if(!result.length) return res.status(404).send('not found')
-        scope._id=req.params.id
-        ref[`id${typeOfScope.charAt(0).toUpperCase()}Ref`] = req.params.id
-        }
+        result = await Scope.find({areaCode:{$regex:'^'+ req.decodedToken.username},typeOfScope:'village'})
+                                    .select('_id')    
+    }
+    else{
+        result = await Scope.find({typeOfScope: 'village'})
+                                    .select('_id')
+    }
 
-        const idAddresses = (await Address.find(ref))
-                            .map(address=>address._id)
+        if(!result.length) return res.status(404).send('not found')
+        idVillages = result.map(village=>village._id)
+            const idAddresses = (await Address.find({idVillageRef:{$in:idVillages}})
+                                                .select('_id'))
+                                .map(address=>address._id)
 
         const addressFields ='idCountryRef idCityRef idDistrictRef idCommuneRef idVillageRef'
         
@@ -137,17 +145,59 @@ exports.getInfoHumans = async(req,res,next)=>{
                                     populate:{path:addressFields,model: 'Scope',select:'name -_id'}}
                             ])
                     .limit(5)
-                    .then(result=> res.status(200).send(result))
+                    .then(result=>result.length? res.status(200).send(result):res.status(404).send('not found'))
                     .catch(err=> res.status(500).send(err))                    
 
 }
 
+exports.getInfoHumansWithIdArea =async  function(req,res,next) {
+    let ref ={typeOfScope : 'country'}
+    if(req.query.idCityRef) {
+        ref.idCityRef= req.query.idCityRef
+        ref.typeOfScope = 'city'
+    }
+    else if(req.query.idDistrictRef) {
+        ref.idDistrictRef= req.query.idDistrictRef
+        ref.typeOfScope = 'district'
+    }
+    else if(req.query.idCommuneRef) {
+        ref.idCommuneRef= req.query.idCommuneRef
+        ref.typeOfScope = 'commune'
+    }
+    else if(req.query.idVillageRef) {
+        ref.idVillageRef= req.query.idVillageRef
+        ref.typeOfScope = 'village'
+    }
+    else if(req.url.split('/')[1] != 'country') 
+        return res.status(404).send('not found')
+
+    if(isValidObjectId(Object.values(ref)[0])) 
+        return res.status(400).send('invalid id')
+    const idAddresses = (await Address.find(ref)
+                                    .select('_id'))
+                                .map(address=>address._id)
+    if(!idAddresses.length) return res.status(400).send('invalid id')
+    const addressFields ='idCountryRef idCityRef idDistrictRef idCommuneRef idVillageRef'
+        return Human.find({idTemporaryResidenceAddressRef:{$in:idAddresses}})
+                                    //populate temporary residence address
+                    .populate([{path:'idTemporaryResidenceAddressRef',model:'Address',
+                                    populate:{path:addressFields,model: 'Scope',select:'name -_id'}},
+                                    //populate permanent address
+                                {path:'idPermanentAddressRef',model:'Address',
+                                    populate:{path:addressFields,model: 'Scope',select:'name -_id'}}
+                            ])
+                    .limit(5)
+                    .then(result=>  result.length? res.status(200).send(result) : res.status(404).send('not found'))
+                    .catch(err=> res.status(500).send(err))      
+    
+}
+
 exports.createHuman=async (req,res,next) => {
-    console.log(req.decodedToken)
-    const process = await Promise.all([Family.findOne({_id:req.params.idFamily})
+    const process = await Promise.all([Family.findOne({_id:req.query.idFamily})
                                         .populate('idAddressRef'),
-                                User.findOne({_id:req.decodedToken._id})
-                                    ])
+                                        User.findOne({_id:req.decodedToken._id}),
+                                        Address.findOne({_id:req.body.human.idPermanentAddressRef})
+                                    ])                               
     const family = process[0]
     const loggedInUser = process[1]
     if(!family) return res.status(400).send('invalid id family')
@@ -159,6 +209,8 @@ exports.createHuman=async (req,res,next) => {
         if(scope.equals(loggedInUser.idManagedScopeRef))
             isAddressManagedByLoggedInUser = true
     })
+    const idPermanentAddressRef = process[2]
+    if(!idPermanentAddressRef) return res.status(400).send('invalid id permanent address')
 
     if(!isAddressManagedByLoggedInUser)
             return res.status(400).send('address of this family is not managed by you')
@@ -170,7 +222,7 @@ exports.createHuman=async (req,res,next) => {
         })
         
     const {err} = Human.validate(newHuman)
-    if(err) return res.status(500).send(err)
+    if(err) return res.status(400).send(err)
     return newHuman.save()
                     .then(human=> {
                         family.members.push(human._id)

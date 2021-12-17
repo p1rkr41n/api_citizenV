@@ -26,7 +26,7 @@ const humanSchema = new Schema({
     },
     religion:{
         type:String,
-        default:null
+        default:"",
     },
     idTemporaryResidenceAddressRef: {
         type :mongoose.Schema.Types.ObjectId,
