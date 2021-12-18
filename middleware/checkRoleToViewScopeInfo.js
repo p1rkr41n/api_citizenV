@@ -1,7 +1,6 @@
 const { object } = require("joi")
 
 module.exports= function(req,res,next) {
-    if(req.decodedToken.role =='A2') return res.send(403).send("access denied")
     const roleId={
         'admin':0,
         'A1':1,

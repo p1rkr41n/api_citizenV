@@ -87,6 +87,3 @@ cities =[
 // ).then(re=>{
 //    console.log(re)
 // })
-
-p =/00$/.test('f000')
-console.log(p)

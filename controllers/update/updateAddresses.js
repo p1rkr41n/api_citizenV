@@ -1,6 +1,7 @@
 const { Address } = require("../../models/address/address")
 const { Scope } = require("../../models/address/scope")
 
+//sau khi tat ca khai bao thì update address
 const updateAddresses = async (req,res,next)=> {
     const processes = await Promise.all([ Scope.find({typeOfScope:'village'}) //find full address of all village
     

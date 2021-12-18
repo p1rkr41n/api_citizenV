@@ -1,7 +1,8 @@
+const { isValidObjectId } = require("mongoose");
 const {  getAreaById, getAddressById, getFullAddressOfVillageById } = require("../controllers/address/address");
 const { getFamiliesWithIdArea } = require("../controllers/family");
 const {  getInfoHumansWithIdArea } = require("../controllers/human");
-const { getInfoScopeById } = require("../controllers/statistics");
+const { getStatisticsInfoScopeById } = require("../controllers/statistics/statistics");
 const auth = require("../middleware/auth");
 const checkRoleToViewScopeInfo = require("../middleware/checkRoleToViewScopeInfo");
 const { Scope } = require("../models/address/scope");
@@ -20,12 +21,17 @@ router.get(['/country/humen',
             '/district/humen',
             '/commune/humen',
             '/village/humen'],[auth,checkRoleToViewScopeInfo],getInfoHumansWithIdArea)
-// get list family of area using _id save in req.query (idCityRef,idDistrictRef,idCommuneRef,idVillageRef)
+// get list family of area using _id save in req.query (idCityRef,idDistrictRef,idCommuneRef,idVillageRef)X
 router.get(['/country/family',
             '/city/family',
             '/district/family',
             '/commune/family',
             '/village/family'],[auth,checkRoleToViewScopeInfo],getFamiliesWithIdArea)
+
+//statistic 
+router.get(['/country/statistics','/city/statistics','/district/statistics','/commune/statistics',
+'/village/statistics'],[auth],getStatisticsInfoScopeById)
+
 
 //get all districts belong to city{_id} or communes belong to district{_id} or village belong to{_id}
 //{_id} save in req.query
@@ -43,12 +49,15 @@ router.get(['/district',
                 if (!areas) return res.status(400).send().send("Error");
                 return res.status(200).send(areas);
             })
+
+
 //get area by id
 router.get(['/city/:id',
             '/district/:id',
             '/commune/:id',
             '/village/:id'],[auth],async (req,res,next)=>{
-
+                if(!isValidObjectId(req.query.id))
+                    return res.status(400).send('invalid id')
                 const typeOfScope = req.url.split('/')[1]
                 const areas = await Scope.find({typeOfScope:typeOfScope,
                                                 _id:req.params.id}).select("_id name");
@@ -57,9 +66,7 @@ router.get(['/city/:id',
             })
 
 
-//statistic 
-router.get(['/country/statistic','/city/statistic','/district/statistic','/commune/statistic',
-            '/village/statistic'],[auth,checkRoleToViewScopeInfo],getInfoScopeById)
+
             
 
 //get area by {_id}

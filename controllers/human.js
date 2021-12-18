@@ -2,8 +2,6 @@ const { isValidObjectId } = require("mongoose")
 const { Human } = require("../models/human/human")
 const { Family } = require("../models/human/family")
 const { User } = require("../models/user/user")
-const ObjectId = require('mongoose').Types.ObjectId
-const utilAddress = require('./address/utilAddress')
 const {Scope}  = require('../models/address/scope')
 const {Address}  = require('../models/address/address')
 
