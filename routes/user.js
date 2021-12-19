@@ -1,5 +1,5 @@
 const { updateAddresses } = require('../controllers/update/updateAddresses')
-const { createUserController, getUserByIdController, changePasswordController, getUsersController, changeDeclarePermissionById, getUserController } = require('../controllers/user')
+const { createUserController, getUserByIdController, changePasswordController, getUsersController, changeByIdUser, getUserController } = require('../controllers/user')
 const auth = require('../middleware/auth')
 const checkDeclarablePermission = require('../middleware/checkDeclarablePermission')
 const checkRoleToAddUser = require('../middleware/checkRoleToAddUser')
@@ -11,12 +11,12 @@ router.get('/all',[auth,checkRoleToAddUser],getUsersController)
 router.get('/:id',[auth],getUserByIdController)
 //add one user 
 router.post('/',[auth,checkRoleToAddUser,checkDeclarablePermission],createUserController)
-//change password of user by id(type:ObjectId)
-router.put('/change-password',[auth],changePasswordController)
 //change password of logged in user
-router.put('/change-password',[auth,checkRoleToAddUser,checkDeclarablePermission],changePasswordController)
+router.put('/change-password',[auth],changePasswordController)
+//change password of user by id(type:ObjectId)
+router.put('/:id/change-password',[auth,checkRoleToAddUser,checkDeclarablePermission],changePasswordController)
 //change declare permission
-router.put('/change-declare-permission',[auth,checkDeclarablePermission],changeDeclarePermissionById)
+router.put('/change-declare-permission',[auth,checkDeclarablePermission],changeByIdUser)
 //get all user that logged in user manage
 router.get('/',[auth],getUserController)
 // router.delete('/:id',[auth,checkRoleToAddUser,checkDeclarablePermission],removeUserController)

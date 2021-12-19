@@ -16,13 +16,6 @@ async function findIdAddress(address) {
     if(!idAddress) return null
     return idAddress
 }
-async function isBelongTo(idAddress,idScope) {
-    const result = await Address.findOne($and[{_id:idAddress},
-                                        {$or:[{idCountryRef :idScope},{idCityRef:idScope},
-                                        {idDistrictRef:idScope},{idCommuneRef:idScope},
-                                        {idVillageRef:idScope}]}])
-        return !!result
-}
 
 async function isValidAddress(address) {
     const process = Promise.all([   Scope.findOne({_id:address.idCountryRef,typeOfScope:'country'}),
@@ -85,10 +78,24 @@ async function updateAddresses() {
         })
     return Address.insertMany(newAddresses)
 }
+
+const formatAddress = (address)=>{
+    // console.log(address.idVillageRef)
+    return address.idVillageRef.name +','+
+            address.idCommuneRef.name+','+
+            address.idDistrictRef.name+','+
+            address.idCityRef.name+','+
+            address.idCommuneRef.name
+
+}
+
+
+
 module.exports={
     findAddressById,
     findIdAddress,
-    isBelongTo,
     isValidAddress,
+    formatAddress,
     // creatAddresses,
 }
+

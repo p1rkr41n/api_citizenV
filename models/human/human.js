@@ -40,7 +40,7 @@ const humanSchema = new Schema({
     },
     gender: {
         type :String,
-        enum:["male","female"],
+        enum:["male","female","others"],
         required :true,
     },
     hometown :{

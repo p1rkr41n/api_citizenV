@@ -26,11 +26,12 @@ router.post("/", async (req,res) => {
         username:user.username,
         role : user.idRoleRef.name,
         declarable: user.declarable,
+        idManagedScopeRef:user.idManagedScopeRef._id
     })
     return res.send({token,
                     name:user.name,
                     area:user.idManagedScopeRef? user.idManagedScopeRef.name:'A1',
-                    idArea: user.idManagedScopeRef._id
+                    idArea: user.idManagedScopeRef?user.idManagedScopeRef._id:'A1'
                 });
 })
 

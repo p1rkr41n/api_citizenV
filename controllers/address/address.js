@@ -1,7 +1,7 @@
 const { Address } = require("../../models/address/address")
 const { Scope } = require("../../models/address/scope")
 const mongoose = require('mongoose')
-const { findAddressById} = require("./utilAddress")
+const { findAddressById} = require("../Util/utilAddress")
 const ObjectId =mongoose.Types.ObjectId
 
 

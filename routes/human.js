@@ -2,6 +2,7 @@ const { getInfoHumanWithId, removeHumanInfoById, getInfoHumen, createHuman, chan
 const auth = require('../middleware/auth')
 const checkRoleToAddUser = require('../middleware/checkRoleToAddUser')
 const checkRoleToDeclareInfo = require('../middleware/checkRoleToDeclareInfo')
+const checkRoleToViewScopeInfo = require('../middleware/checkRoleToViewScopeInfo')
 const router = require('express').Router()
 
 //get infomation of a human {_id}

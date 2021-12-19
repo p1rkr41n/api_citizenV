@@ -1,7 +1,6 @@
 const { Human } = require("../../models/human/human")
 const ObjectId = require('mongoose').Types.ObjectId
 
-
 //lay danh sach gia tri trong 1 field
 // values  = await Human.distinct('<field_name>')
 
@@ -14,13 +13,9 @@ const ObjectId = require('mongoose').Types.ObjectId
                 }
             }
         },
-        {$project:{
-            idTemporaryResidenceAddressRef:1,gender:1
-
-        }},
+       
             {
-                $group:{//nếu thống kê tất cả thì mới cần trường này, k thì không cần
-                    // _id:"$idTemporaryResidenceAddressRef",
+                $group:{
                     _id:{
                         gender:"$gender"
                     },
@@ -29,16 +24,14 @@ const ObjectId = require('mongoose').Types.ObjectId
             }
                 
     ])
- 
+
 //thống kê theo giới tính,độ tuổi dân số theo các khoảng tuổi của 1 số làng( có thể theo xã,thành phố)
     exports.censusByAgeAndGender =(addresses)=> Human.aggregate([
             {
                 $match:{
                     idTemporaryResidenceAddressRef: {
 
-                        $in:addresses//địa chỉ đầy đủ của các khu vực muốn thống kê
-                        //nếu muốn tìm của 1 xã thì tìm địa chỉ đầy đủ của các làng do xã đó quản lý và thay array đó vào phía trên
-                        //nếu muốn thống kê tất thì comment phần match này
+                        $in:addresses
                     }
                 }
             },
@@ -49,43 +42,38 @@ const ObjectId = require('mongoose').Types.ObjectId
                     },
                     gender:1,
                     idTemporaryResidenceAddressRef:1,
-                            
-                    //             religion:1,
-                                // job:1              
+                                    
                 }
             },
             {
                 $group:{
                                 _id:{
-                                    // idTemporaryResidenceAddressRef:"$idTemporaryResidenceAddressRef",
                                     gender:"$gender",
-                                    // religion:"$religion",
-                                    // job:"$job",
                                     rangeAge:{
                                         $cond: {
-                                            if: { $gt: [ "$age", 80 ] }, then: ">80",
+                                            if: { $gte: [ "$age", 80 ] }, then: ">=80",
                                             else: {
                                                 $cond: {
-                                                    if: { $gt: [ "$age", 70 ] }, then: "71-80",
+                                                    if: { $gte: [ "$age", 70 ] }, then: "70-79",
                                                     else: {
                                                         $cond: {
-                                                            if: { $gt: [ "$age", 60 ] }, then: "61-70",
+                                                            if: { $gte: [ "$age", 60 ] }, then: "60-69",
                                                             else: {
                                                                 $cond: {
-                                                                    if: { $gt: [ "$age", 50 ] }, then: "51-60",
+                                                                    if: { $gte: [ "$age", 50 ] }, then: "50-59",
                                                                     else: {
                                                                         $cond: {
-                                                                            if: { $gt: [ "$age", 40 ] }, then: "41-50",
+                                                                            if: { $gte: [ "$age", 40 ] }, then: "40-49",
                                                                             else: {
                                                                                 $cond: {
-                                                                                    if: { $gt: [ "$age", 30 ] }, then: "31-40",
+                                                                                    if: { $gte: [ "$age", 30 ] }, then: "30-39",
                                                                                     else: {
                                                                                         $cond: {
-                                                                                            if: { $gt: [ "$age", 20 ] }, then: "21-30",
+                                                                                            if: { $gte: [ "$age", 20 ] }, then: "20-29",
                                                                                             else: {
                                                                                                 $cond: {
-                                                                                                    if: { $gt: [ "$age", 10 ] }, then: "11-20",
-                                                                                                    else: "0-10" }
+                                                                                                    if: { $gte: [ "$age", 10 ] }, then: "10-19",
+                                                                                                    else: "0-9" }
                                                                                             } }
                                                                                     } }
                                                                             } }
@@ -113,7 +101,6 @@ const ObjectId = require('mongoose').Types.ObjectId
             {
                 $group:{
                     _id:{
-                        // idTemporaryResidenceAddressRef:"$idTemporaryResidenceAddressRef",
                         unemployment: {$eq:["$job",""] }
                     },
                     count:{
@@ -122,7 +109,6 @@ const ObjectId = require('mongoose').Types.ObjectId
                 }
             }
         ])
-//thống kê tôn giáo của 1 số làng(nếu muốn thống kê tất thì comment phần match)
 
      exports.statisticsOnReligion=(addresses)=>Human.aggregate([
             {
@@ -135,7 +121,6 @@ const ObjectId = require('mongoose').Types.ObjectId
             {
                 $group:{
                     _id:{
-                        // idTemporaryResidenceAddressRef:"$idTemporaryResidenceAddressRef",
                         religion:"$religion"
                     },
                     count:{$sum:1}
@@ -155,7 +140,6 @@ const ObjectId = require('mongoose').Types.ObjectId
         {
             $group:{
                 _id:{
-                    // idTemporaryResidenceAddressRef:"$idTemporaryResidenceAddressRef",
                     educationalLevel:"$educationalLevel"
                 },
                 count:{$sum:1}
@@ -163,3 +147,19 @@ const ObjectId = require('mongoose').Types.ObjectId
             },
         },
     ])
+
+
+exports.formatData = function(data,KEYSLIST) {
+        const formattedData =[]
+        console.log(data)
+        KEYSLIST.forEach(key=>{
+            if(!Object.keys(data[0])[0].includes(key)){
+                const unit ={}
+                unit[`${Object.keys(data[0])[0]}`] = key
+                unit.count =0
+                formattedData.push(unit)
+            }
+            else formattedData.push(data[key])
+        })
+        return formattedData
+    }

@@ -15,10 +15,6 @@ const { Scope } = require('./models/address/scope');
 const   {Address} = require('./models/address/address');
 const { Human } = require('./models/human/human');
 const {Family} = require('./models/human/family');
-const { removeHumanInfoById } = require('./controllers/human');
-const { required } = require('joi');
-const ObjectId = require('mongoose').Types.ObjectId;
-const { updateAddresses } = require('./controllers/update/updateAddresses');
 
 require("./startup/cors")(app);
 // create application/json parser

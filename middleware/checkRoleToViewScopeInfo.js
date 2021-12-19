@@ -12,29 +12,28 @@ module.exports= function(req,res,next) {
     if(req.body.role =='admin') return res.status(403).send('Access deniend')
     req.typeOfScope = req.url.split('/')[1]
     const roleID = roleId[req.decodedToken.role]
-    console.log(roleId[req.decodedToken.role],roleID == roleId['B1'])
         switch (req.typeOfScope){
             case 'country' :
                 if(req.decodedToken.role =='A1')
                     return next();
                     break;
             case 'city':
-                if(roleID<=roleId['A1']||(roleID ==roleId['A2']))
+                if(roleID<=roleId['A1']||(roleID ==roleId['A2']&&req.decodedToken.role =='A2'))
                     return  next();
                     break;
             case 'district': 
-                if(roleID<=roleId['A2']||(roleID ==roleId['A3']))
+                if(roleID<=roleId['A2']||(roleID ==roleId['A3']&&req.decodedToken.role =='A3'))
                     return next();
                     break;
             case 'commune': 
-                if(roleID<=roleId['A3']||(roleID ==roleId['B1']))
+                if(roleID<=roleId['A3']||(roleID ==roleId['B1']&&req.decodedToken.role =='A2'))
                     return next();
                     break;
             case 'village': 
             //trong de ghi la B2 chi dc nhap lieu
-                if(roleID == roleId['B1'])
+                if(roleID == roleId['B1'] || roleID ==roleId['B2'])
                     return next();
                     break;
         }
-        return res.status(403).send('Access denied')
+        return res.status(403).send('Access denied ')
 }

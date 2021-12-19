@@ -4,6 +4,9 @@ const { Family } = require("../models/human/family")
 const { User } = require("../models/user/user")
 const {Scope}  = require('../models/address/scope')
 const {Address}  = require('../models/address/address')
+const { object } = require("joi")
+const { formatAddress } = require("./Util/utilAddress")
+const { formatHumanInfo } = require("./Util/utilHuman")
 
 
 exports.getInfoHumanWithId =  async function(req,res,next) {
@@ -118,7 +121,7 @@ exports.getInfoHumen = async(req,res,next)=>{
     let result
     if(req.decodedToken.role!='A1'&&req.decodedToken.role!='admin') {
         //if(scope{req.param.id} belong to logged in user's managed scope)
-        result = await Scope.find({areaCode:{$regex:'^'+ req.decodedToken.username},typeOfScope:'village'})
+        result = await Scope.find({areaCode:{$regex:new RegExp('^'+ req.decodedToken.username)},typeOfScope:'village'})
                                     .select('_id')    
     }
     else{
@@ -137,14 +140,21 @@ exports.getInfoHumen = async(req,res,next)=>{
         return Human.find({idTemporaryResidenceAddressRef:{$in:idAddresses}})
                                     //populate temporary residence address
                     .populate([{path:'idTemporaryResidenceAddressRef',model:'Address',
-                                    populate:{path:addressFields,model: 'Scope',select:'name -_id'}},
+                                    populate:{path:addressFields,model: 'Scope',select:'name -_id '}},
                                     //populate permanent address
                                 {path:'idPermanentAddressRef',model:'Address',
                                     populate:{path:addressFields,model: 'Scope',select:'name -_id'}}
                             ])
                     .limit(5)
-                    .then(result=>result.length? res.status(200).send(result):res.status(404).send('not found'))
-                    .catch(err=> res.status(500).send(err))                    
+                    .then((results)=>{
+                        if(!results.length)
+                            res.status(404).send('not found')
+                        const data = results.map(result=>{
+                            return formatHumanInfo(result)
+                        })
+                            return res.status(200).send(data)
+                    })
+                    .catch(err=> console.log(err))                    
 
 }
 
@@ -169,28 +179,42 @@ exports.getInfoHumansWithIdArea =async  function(req,res,next) {
     else if(req.url.split('/')[1] != 'country') 
         return res.status(404).send('not found')
 
-    if(isValidObjectId(Object.values(ref)[0])) 
+    if(!isValidObjectId(Object.values(ref)[1])) 
         return res.status(400).send('invalid id')
-    const idAddresses = (await Address.find(ref)
+    const user= req.decodedToken
+    console.log(user,ref)
+    const idAddresses = (await Address.find({$and:[ref,
+                                        {$or:[{idCountryRef :user.idManagedScopeRef},{idCityRef:user.idManagedScopeRef},
+                                        {idDistrictRef:user.idManagedScopeRef},{idCommuneRef:user.idManagedScopeRef},
+                                        {idVillageRef:user.idManagedScopeRef}]}]})
                                     .select('_id'))
                                 .map(address=>address._id)
-    if(!idAddresses.length) return res.status(400).send('invalid id')
+                                console.log(idAddresses)
+    if(!idAddresses.length) return res.status(404).send('not found')
     const addressFields ='idCountryRef idCityRef idDistrictRef idCommuneRef idVillageRef'
         return Human.find({idTemporaryResidenceAddressRef:{$in:idAddresses}})
                                     //populate temporary residence address
-                    .populate([{path:'idTemporaryResidenceAddressRef',model:'Address',
+                    .populate([{path:'idTemporaryResidenceAddressRef',model:'Address',select:'-_id ',
                                     populate:{path:addressFields,model: 'Scope',select:'name -_id'}},
                                     //populate permanent address
                                 {path:'idPermanentAddressRef',model:'Address',
                                     populate:{path:addressFields,model: 'Scope',select:'name -_id'}}
                             ])
                     .limit(5)
-                    .then(result=>  result.length? res.status(200).send(result) : res.status(404).send('not found'))
+                    .then((results)=>{
+                        if(!results.length)
+                            res.status(404).send('not found')
+                        const data = results.map(result=>{
+                            return formatHumanInfo(result)
+                        })
+                            return res.status(200).send(data)
+                    })
                     .catch(err=> res.status(500).send(err))      
     
 }
 
 exports.createHuman=async (req,res,next) => {
+    if(!isValidObjectId(req.query.idFamilyRef)) return res.status(400).send('invalid id family')
     const process = await Promise.all([Family.findOne({_id:req.query.idFamily})
                                         .populate('idAddressRef'),
                                         User.findOne({_id:req.decodedToken._id}),

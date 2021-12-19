@@ -4,6 +4,8 @@ const { Human } = require("../models/human/human")
 const { Address } = require("../models/address/address")
 const ObjectId = require('mongoose').Types.ObjectId
 const { isValidObjectId, model } = require("mongoose")
+const { formatAddress } = require("./Util/utilAddress")
+const { formatHumanInfo } = require("./Util/utilHuman")
 
 exports.createFamily = async function(req,res,next) {
     
@@ -129,10 +131,14 @@ exports.getFamiliesWithIdArea = async (req,res,next)=>{
 
     if(isValidObjectId(Object.values(ref)[0])) 
     return res.status(400).send('invalid id')
-    const idAddresses = (await Address.find(ref)
+    const user = req.decodedToken
+    const idAddresses = (await Address.find({$and:[ref,
+                                            {$or:[{idCountryRef :user.idManagedScopeRef},{idCityRef:user.idManagedScopeRef},
+                                            {idDistrictRef:user.idManagedScopeRef},{idCommuneRef:user.idManagedScopeRef},
+                                            {idVillageRef:user.idManagedScopeRef}]}]})
                                     .select('_id'))
                                 .map(address=>address._id)
-    if(!idAddresses.length) return res.status(400).send('invalid id')
+    if(!idAddresses.length) return res.status(400).send('not found')
     return Family.find({idAddressRef:{$in:idAddresses}})
                 .populate({path:'idAddressRef',model:'Address',
                             populate:{path:'idVillageRef',model:'Scope'}
@@ -169,12 +175,24 @@ exports.getInfoFamilyById = async (req,res,next)=>{
                     
     if(!isManagedByUser )   
         return res.status(404).send("can't find data match with id in your area that you manage")
-    const members = (await Human.find({_id:{$in:family.members}})
+     Human.find({_id:{$in:family.members}})
                                 .populate({path:'idPermanentAddressRef',model:'Address',
                                 populate:{path:addressFields,model: 'Scope',select:'name'}
-                            })
-                    )
+                            }).select('-idTemporaryResidenceAddressRef')
+        .then(results=>{
+            if(!results.length) return res.status(404).send('not found')
+            return {
+                headOfHouseholdName:family.headOfHouseholdName,
+                householdCode:family.householdCode,
+                address: formatAddress(family.idAddressRef),
+                members: results.map(result=>{
+                    return formatHumanInfo(result)
+                })
 
-            return res.status(200).send({family,members})           
+            }
+        })
+        .then(result=> res.status(200).send(result))
+        .catch(err=> console.log(err))
+
 
 }
