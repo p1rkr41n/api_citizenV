@@ -1,6 +1,7 @@
 const express = require('express');
 const config = require('config');
 const jwt =require('jsonwebtoken');
+var session = require('express-session');
 const app = express();
 
 const port =3000;
@@ -19,6 +20,8 @@ const {Family} = require('./models/human/family');
 require("./startup/cors")(app);
 // create application/json parser
 app.use(express.json());
+// use sessions for tracking logins
+app.use(session({secret: "asecretkey"}));
 // create application/x-www-form-urlencoded parser
 app.use(express.urlencoded({ extended: true }));
 //{username,password} => server
